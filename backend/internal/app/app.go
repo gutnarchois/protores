@@ -246,6 +246,9 @@ func validDate(s string) bool { _, e := time.Parse("2006-01-02", s); return e ==
 func (a *App) route(r *http.Request, u User, token string) (any, error) {
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1")
 	ctx := r.Context()
+	if path == "/students" || path == "/attendance" {
+		return a.attendance(r, u, path)
+	}
 	if r.Method == "GET" && path == "/me" {
 		return u, nil
 	}

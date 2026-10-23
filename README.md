@@ -2,8 +2,8 @@
 
 Aplicación Android en Flutter para organizar los turnos del PAE de la Institución Educativa Cristóbal Colón, Mariano Ramos. API en Go y MySQL.
 
-- **Administrador:** crea cuentas y grupos, programa fecha, hora, orden y duración; inicia, pausa, reanuda, omite y cancela turnos.
-- **Docente:** finaliza el turno activo de su grupo para llamar al siguiente.
+- **Administrador:** crea cuentas, grupos y estudiantes; programa fecha, hora, orden y duración; inicia, pausa, reanuda, omite y cancela turnos; registra y consulta asistencia por curso.
+- **Docente:** finaliza el turno activo de su grupo para llamar al siguiente; registra ingresos por QR o búsqueda y consulta la asistencia de sus cursos.
 - **Estudiante:** consulta el grupo actual, contador, siguiente grupo y programación. Sin permisos de escritura.
 
 API desplegada: https://restaurante.in4.blue/api/v1 · [Estado del servicio](https://restaurante.in4.blue/healthz).
@@ -44,4 +44,4 @@ TEST_MYSQL_DSN='usuario:clave@tcp(127.0.0.1:3306)/protores_test' go test -race .
 
 La firma Android requiere `mobile/android/key.properties`, que está excluido de Git. Consultar la guía de operación. El repositorio es `gutnarchois/protores`; el producto y el paquete Android se llaman **Protores** y `co.edu.iecc.protores`.
 
-Versión 0.1.1 publicada para Android 7.0 o superior. Primera versión para piloto: falta la validación presencial de la institución. No incluye asistencia individual, QR ni inventario de alimentos.
+Versión 0.2.0 para Android 7.0 o superior. Incorpora las cuatro pantallas del mockup, estudiantes por curso, registro de asistencia por QR o búsqueda y resumen de asistencia. API y página de descarga actualizadas. Versión para piloto: falta la validación presencial de la institución y del escáner en dispositivos físicos. No incluye inventario de alimentos.

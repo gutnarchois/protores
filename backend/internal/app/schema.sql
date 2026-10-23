@@ -36,3 +36,20 @@ CREATE TABLE IF NOT EXISTS audit_events (
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS students (
+ id BIGINT PRIMARY KEY AUTO_INCREMENT,
+ name VARCHAR(120) NOT NULL,
+ code VARCHAR(80) NOT NULL UNIQUE,
+ group_id BIGINT NOT NULL,
+ FOREIGN KEY (group_id) REFERENCES school_groups(id)
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS attendance (
+ student_id BIGINT NOT NULL,
+ service_date DATE NOT NULL,
+ registered_by BIGINT NOT NULL,
+ registered_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ PRIMARY KEY(student_id,service_date),
+ FOREIGN KEY(student_id) REFERENCES students(id),
+ FOREIGN KEY(registered_by) REFERENCES users(id)
+) ENGINE=InnoDB;

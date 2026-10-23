@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Protores API",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Detalles y reglas en docs/API.md. Sesiones de 12 horas. Roles admin, teacher, student."
   },
   "servers": [
@@ -834,6 +834,162 @@
             }
           }
         ]
+      }
+    },
+    "/students": {
+      "get": {
+        "summary": "Padrón y asistencia de hoy (admin o docente asignado)",
+        "responses": {
+          "200": {
+            "description": "Estudiantes visibles; asistencia de hoy en Colombia",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "code": {
+                        "type": "string"
+                      },
+                      "group_id": {
+                        "type": "integer"
+                      },
+                      "group_name": {
+                        "type": "string"
+                      },
+                      "registered_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Sesión inválida"
+          },
+          "403": {
+            "description": "Permisos insuficientes"
+          },
+          "409": {
+            "description": "Conflicto de estado o recurso"
+          },
+          "404": {
+            "description": "Estudiante no encontrado"
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear estudiante (solo admin)",
+        "responses": {
+          "200": {
+            "description": "Operación correcta"
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Sesión inválida"
+          },
+          "403": {
+            "description": "Permisos insuficientes"
+          },
+          "409": {
+            "description": "Conflicto de estado o recurso"
+          },
+          "404": {
+            "description": "Estudiante no encontrado"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "code",
+                  "group_id"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "group_id": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attendance": {
+      "post": {
+        "summary": "Registrar ingreso (admin o docente asignado)",
+        "description": "Requiere jornada en marcha y curso en atención. Un ingreso por estudiante y día en Colombia. Rechaza duplicados con 409.",
+        "responses": {
+          "200": {
+            "description": "Operación correcta"
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Sesión inválida"
+          },
+          "403": {
+            "description": "Permisos insuficientes"
+          },
+          "409": {
+            "description": "Conflicto de estado o recurso"
+          },
+          "404": {
+            "description": "Estudiante no encontrado"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "maxLength": 80
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

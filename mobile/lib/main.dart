@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 const apiBase = String.fromEnvironment(
   'API_BASE_URL',
@@ -21,9 +22,9 @@ class ProtoresApp extends StatelessWidget {
     title: 'Protores',
     debugShowCheckedModeBanner: false,
     theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff125b87)),
+      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff139c61)),
       useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xfff4f7fa),
+      scaffoldBackgroundColor: const Color(0xfff7f9fd),
       inputDecorationTheme: const InputDecorationTheme(
         border: OutlineInputBorder(),
       ),
@@ -80,17 +81,22 @@ class Api {
 }
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  const Home({super.key, this.api});
+  final Api? api;
   @override
   State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> with WidgetsBindingObserver {
-  final api = Api();
+  late final Api api = widget.api ?? Api();
   final loginName = TextEditingController();
   final loginPassword = TextEditingController();
   Map<String, dynamic>? user, day;
-  List<dynamic> users = [], groups = [];
+  List<dynamic> users = [], groups = [], students = [];
+  String search = '';
+  int? selectedGroup;
+  String? attendanceError;
+  bool get staff => isAdmin || user?['role'] == 'teacher';
   String? error;
   String? connectionError;
   DateTime? lastSync;
@@ -169,6 +175,10 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         day = null;
         users = [];
         groups = [];
+        students = [];
+        selectedGroup = null;
+        search = '';
+        attendanceError = null;
         page = 0;
         error = null;
         connectionError = null;
@@ -235,6 +245,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         lastSync = DateTime.now();
         connectionError = null;
       });
+      if (staff) await loadStudents();
     } catch (e) {
       if (e is ApiException && e.code == 401) {
         await storage.delete(key: 'token');
@@ -385,92 +396,148 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     if (user == null) {
       return loginScreen();
     }
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Protores'),
-        actions: [
-          IconButton(
-            tooltip: 'Cambiar contraseña',
-            onPressed: changePassword,
-            icon: const Icon(Icons.lock_outline),
+    final accent = [
+      const Color(0xff15995d),
+      const Color(0xff237be5),
+      const Color(0xff7356e9),
+      const Color(0xfff58a0b),
+    ][page];
+    return Theme(
+      data: Theme.of(context).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: accent,
+        ).copyWith(primary: accent, onPrimary: Colors.white),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            onPressed: busy ? null : logout,
-            icon: const Icon(Icons.logout),
-          ),
-        ],
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: accent.withValues(alpha: 0.12),
+        ),
       ),
-      body: Column(
-        children: [
-          if (connectionError != null)
-            MaterialBanner(
-              content: Text(
-                'Sin sincronización. Datos posiblemente desactualizados. $connectionError',
-              ),
-              actions: [
-                TextButton(onPressed: refresh, child: const Text('Reintentar')),
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: accent,
+          foregroundColor: Colors.white,
+          toolbarHeight: 80,
+          leading: Icon(
+            page == 0
+                ? Icons.restaurant_menu
+                : page == 1
+                ? Icons.schedule
+                : page == 2
+                ? Icons.qr_code_scanner
+                : Icons.settings,
+          ),
+          title: Text(
+            [
+              'Restaurante Escolar',
+              'Turno actual',
+              'Registro de ingreso',
+              'Panel del encargado',
+            ][page],
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          ),
+          actions: [
+            IconButton(
+              tooltip: 'Actualizar',
+              onPressed: refresh,
+              icon: const Icon(Icons.refresh),
+            ),
+            PopupMenuButton<String>(
+              onSelected: (v) => v == 'password' ? changePassword() : logout(),
+              itemBuilder: (_) => const [
+                PopupMenuItem(
+                  value: 'password',
+                  child: Text('Cambiar contraseña'),
+                ),
+                PopupMenuItem(value: 'logout', child: Text('Cerrar sesión')),
               ],
             ),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                await refresh();
-                if (isAdmin) {
-                  await loadAdmin();
-                }
-              },
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  Text(
-                    'I. E. Cristóbal Colón · Mariano Ramos',
-                    style: Theme.of(context).textTheme.labelLarge,
+          ],
+        ),
+        body: Column(
+          children: [
+            if (connectionError != null)
+              MaterialBanner(
+                content: Text('Sin sincronización. $connectionError'),
+                actions: [
+                  TextButton(
+                    onPressed: refresh,
+                    child: const Text('Reintentar'),
                   ),
-                  Text(
-                    'Hola, ${user!['name']}',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  Text(
-                    '${{'admin': 'Administrador', 'teacher': 'Docente', 'student': 'Estudiante'}[user!['role']]} · ${day?['date'] ?? today}',
-                  ),
-                  const SizedBox(height: 16),
-                  if (page == 0) ...statusScreen() else ...adminScreen(),
-                  if (lastSync != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Text(
-                        'Última sincronización: ${DateFormat('HH:mm:ss').format(lastSync!)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
                 ],
               ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: refresh,
+                child: ListView(
+                  key: ValueKey(page),
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 640),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (page == 0) ...welcomeScreen(),
+                            if (page == 1) ...statusScreen(),
+                            if (page == 2) ...registrationScreen(),
+                            if (page == 3) ...managerScreen(),
+                            if (lastSync != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Text(
+                                  'Actualizado: ${DateFormat('HH:mm:ss').format(lastSync!)}',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: page,
+          onDestinationSelected: (v) {
+            setState(() => page = v);
+            if (v == 3 && isAdmin) loadAdmin();
+            if (staff && v >= 2) loadStudents();
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Inicio',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.schedule),
+              label: 'Turno actual',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.qr_code_scanner),
+              label: 'Registro',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Encargado',
+            ),
+          ],
+        ),
       ),
-      bottomNavigationBar: isAdmin
-          ? NavigationBar(
-              selectedIndex: page,
-              onDestinationSelected: (v) {
-                setState(() => page = v);
-                if (v == 1) {
-                  loadAdmin();
-                }
-              },
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.restaurant),
-                  label: 'Turnos',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.settings),
-                  label: 'Administrar',
-                ),
-              ],
-            )
-          : null,
     );
   }
 
@@ -487,7 +554,7 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
                 const Icon(
                   Icons.restaurant_menu,
                   size: 72,
-                  color: Color(0xff125b87),
+                  color: Color(0xff15995d),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -545,142 +612,576 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       ),
     ),
   );
-  List<Widget> statusScreen() {
-    final current = active;
-    final pending = turns.where((t) => t['status'] == 'pending').toList();
-    final canFinish =
-        current != null &&
-        (isAdmin ||
-            (user!['role'] == 'teacher' &&
-                current['teacher_id'] == user!['id']));
-    return [
-      Card(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget panel(
+    String title,
+    IconData icon,
+    List<Widget> children, {
+    Color? color,
+  }) => Card(
+    color: color ?? Colors.white,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(18),
+      side: const BorderSide(color: Color(0xffe9edf4)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              Text(
-                statusName(day?['status']),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                current?['group_name'] ??
-                    (day?['status'] == 'finished'
-                        ? '¡Jornada terminada!'
-                        : 'Esperando el inicio'),
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              if (current != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  countdown(remaining(current)),
-                  style: Theme.of(context).textTheme.displayLarge,
+              Icon(icon, color: const Color(0xff123461)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff0a2350),
+                  ),
                 ),
-                Text(
-                  day?['status'] == 'paused'
-                      ? 'Contador en pausa'
-                      : remaining(current) <= 0
-                      ? 'Tiempo excedido · esperando confirmación docente'
-                      : 'Tiempo restante',
-                ),
-              ],
-              const SizedBox(height: 20),
-              Text(
-                pending.isEmpty
-                    ? 'No hay más grupos pendientes'
-                    : 'Sigue: ${pending.first['group_name']}',
-                style: Theme.of(context).textTheme.titleLarge,
               ),
-              if (canFinish) ...[
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed:
-                      busy ||
-                          connectionError != null ||
-                          day?['status'] != 'running'
-                      ? null
-                      : () => command('/turns/${current['id']}/finish'),
-                  icon: const Icon(Icons.check_circle_outline),
-                  label: const Text('Finalizar atención y llamar al siguiente'),
-                ),
-              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
+      ),
+    ),
+  );
+
+  List<Widget> welcomeScreen() => [
+    panel('¡Bienvenido, ${user!['name']}!', Icons.waving_hand_outlined, const [
+      Text(
+        'Consulta los horarios de turnos y las normas del restaurante escolar.',
+        textAlign: TextAlign.center,
+      ),
+    ], color: const Color(0xffe9f3ff)),
+    panel('Horarios de turnos', Icons.schedule, scheduleRows()),
+    panel('Normas del restaurante', Icons.assignment_outlined, [
+      for (final rule in [
+        'Respeta tu turno.',
+        'Mantén el orden en la fila.',
+        'No ingreses con alimentos externos.',
+        'Deposita la basura en su lugar.',
+        'Sigue las indicaciones del personal.',
+      ])
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.check_circle,
+                color: Color(0xff15995d),
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Text(rule)),
             ],
           ),
         ),
-      ),
-      if (isAdmin && day != null && day!['id'] != 0 && day!['id'] != null)
-        Wrap(
-          spacing: 8,
+    ]),
+  ];
+
+  List<Widget> scheduleRows() => [
+    if (turns.isEmpty) const Text('Aún no hay turnos programados para hoy.'),
+    for (final t in turns)
+      Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: t['status'] == 'active'
+              ? const Color(0xffd4f5df)
+              : [
+                  const Color(0xfffff0c2),
+                  const Color(0xffd9ecff),
+                  const Color(0xffd4f5df),
+                  const Color(0xffffdce0),
+                  const Color(0xffe7dfff),
+                  const Color(0xffd4f4fa),
+                ][turns.indexOf(t) % 6],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
           children: [
-            if (day!['status'] == 'scheduled')
-              FilledButton(
-                onPressed: busy || connectionError != null
-                    ? null
-                    : () => command('/admin/service-days/${day!['id']}/start'),
-                child: const Text('Iniciar jornada'),
+            Expanded(
+              flex: 3,
+              child: Text(
+                '${clock(t['scheduled'])} – ${clock(DateTime.parse(t['scheduled']).add(Duration(seconds: t['duration_seconds'] as int)).toIso8601String())}',
+                style: const TextStyle(fontSize: 12),
               ),
-            if (day!['status'] == 'running')
-              OutlinedButton(
-                onPressed: busy || connectionError != null
-                    ? null
-                    : () => command('/admin/service-days/${day!['id']}/pause'),
-                child: const Text('Pausar'),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: Text(
+                t['group_name'],
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            if (day!['status'] == 'paused')
-              FilledButton(
-                onPressed: busy || connectionError != null
-                    ? null
-                    : () => command('/admin/service-days/${day!['id']}/resume'),
-                child: const Text('Reanudar'),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 2,
+              child: Text(
+                t['status'] == 'active' ? 'En curso' : statusName(t['status']),
+                textAlign: TextAlign.right,
+                style: const TextStyle(fontSize: 11),
               ),
+            ),
           ],
         ),
-      const SizedBox(height: 16),
-      Text(
-        'Programación del día',
-        style: Theme.of(context).textTheme.titleLarge,
       ),
-      if (turns.isEmpty)
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('El administrador aún no ha programado los grupos.'),
+  ];
+
+  List<Widget> statusScreen() {
+    final current = active;
+    final pending = turns.where((t) => t['status'] == 'pending').toList();
+    final seconds = current == null
+        ? 0
+        : remaining(current).clamp(0, current['duration_seconds'] as int);
+    return [
+      panel('En este momento se atiende:', Icons.groups, [
+        Text(
+          current?['group_name'] ?? statusName(day?['status']),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 44,
+            fontWeight: FontWeight.w800,
+            color: Color(0xff0a2350),
+          ),
         ),
-      for (final t in turns)
-        Card(
-          child: ListTile(
-            leading: Icon(
-              t['status'] == 'active'
-                  ? Icons.restaurant
-                  : Icons.groups_outlined,
-              color: t['status'] == 'active' ? Colors.green : null,
+        const SizedBox(height: 10),
+        const Text(
+          'TURNO ACTUAL',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xff15995d),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ], color: const Color(0xffe0f6e8)),
+      panel('Siguiente turno:', Icons.groups_outlined, [
+        Text(
+          pending.isEmpty
+              ? 'No hay turnos pendientes'
+              : pending.first['group_name'],
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+        ),
+      ], color: const Color(0xffedf5ff)),
+      if (current != null)
+        panel('Tiempo restante del turno actual', Icons.timer_outlined, [
+          LinearProgressIndicator(
+            value: seconds / (current['duration_seconds'] as int),
+            minHeight: 12,
+            borderRadius: BorderRadius.circular(12),
+            color: const Color(0xff2dbf78),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${countdown(remaining(current))} · ${day?['status'] == 'paused'
+                ? 'En pausa'
+                : remaining(current) <= 0
+                ? 'Tiempo excedido'
+                : '${current['duration_seconds'] ~/ 60} minutos en total'}',
+          ),
+          if (isAdmin ||
+              (user?['role'] == 'teacher' &&
+                  current['teacher_id'] == user?['id']))
+            FilledButton(
+              onPressed:
+                  busy || connectionError != null || day?['status'] != 'running'
+                  ? null
+                  : () => command('/turns/${current['id']}/finish'),
+              child: const Text('Finalizar atención y llamar al siguiente'),
             ),
-            title: Text(t['group_name']),
-            subtitle: Text(
-              '${clock(t['scheduled'])} · ${t['duration_seconds'] ~/ 60} min · ${statusName(t['status'])}',
+        ]),
+      panel('Horario completo', Icons.schedule, scheduleRows()),
+    ];
+  }
+
+  Future<void> loadStudents() async {
+    try {
+      final result = await api.call('/students');
+      if (mounted && staff) {
+        setState(() {
+          students = result;
+          attendanceError = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => attendanceError = readError(e));
+    }
+  }
+
+  Future<void> registerCode(String code) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final result = await api.call(
+        '/attendance',
+        method: 'POST',
+        data: {'code': code},
+      );
+      showMessage('Ingreso registrado: ${result['name']}');
+      await loadStudents();
+    } catch (e) {
+      showMessage(readError(e));
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> scanCode() async {
+    final code = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => const ScannerScreen()),
+    );
+    if (code != null && mounted) await registerCode(code);
+  }
+
+  Widget studentRow(dynamic s, {bool register = false}) => ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Icon(
+      s['registered_at'] == null ? Icons.person_outline : Icons.check_circle,
+      color: s['registered_at'] == null
+          ? Colors.blueGrey
+          : const Color(0xff15995d),
+    ),
+    title: Text(s['name']),
+    subtitle: Text('${s['group_name']} · ${s['code']}'),
+    trailing: s['registered_at'] != null
+        ? Text(clock(s['registered_at']))
+        : register
+        ? TextButton(
+            onPressed: busy || connectionError != null
+                ? null
+                : () => registerCode(s['code']),
+            child: const Text('Registrar'),
+          )
+        : const Text('Pendiente'),
+  );
+
+  List<Widget> registrationScreen() {
+    if (!staff) {
+      return [
+        panel('Registro de ingreso', Icons.lock_outline, const [
+          Text(
+            'El registro de estudiantes está disponible para docentes y administradores.',
+          ),
+        ]),
+      ];
+    }
+    final recent = students.where((s) => s['registered_at'] != null).toList()
+      ..sort(
+        (a, b) => (b['registered_at'] as String).compareTo(
+          a['registered_at'] as String,
+        ),
+      );
+    return [
+      panel('Escanear código', Icons.qr_code_scanner, [
+        const Icon(Icons.qr_code_scanner, size: 88, color: Color(0xff344895)),
+        const SizedBox(height: 16),
+        const Text(
+          'Acerca el código QR del estudiante para registrar su ingreso.',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16),
+        FilledButton(
+          onPressed: busy || connectionError != null ? null : scanCode,
+          child: const Text('ESCANEAR'),
+        ),
+      ], color: const Color(0xffefecff)),
+      if (attendanceError != null)
+        Text(attendanceError!, style: const TextStyle(color: Colors.red)),
+      TextField(
+        decoration: const InputDecoration(
+          prefixIcon: Icon(Icons.search),
+          hintText: 'Buscar estudiante por nombre o código…',
+        ),
+        onChanged: (v) => setState(() => search = v.trim().toLowerCase()),
+      ),
+      if (search.isNotEmpty)
+        panel('Resultados de búsqueda', Icons.search, [
+          for (final s in students.where(
+            (s) => '${s['name']} ${s['code']}'.toLowerCase().contains(search),
+          ))
+            studentRow(s, register: true),
+          if (!students.any(
+            (s) => '${s['name']} ${s['code']}'.toLowerCase().contains(search),
+          ))
+            const Text('No se encontraron estudiantes.'),
+        ]),
+      panel('Últimos registros', Icons.history, [
+        if (recent.isEmpty) const Text('Aún no hay ingresos registrados hoy.'),
+        for (final s in recent.take(10)) studentRow(s),
+      ]),
+    ];
+  }
+
+  List<Widget> managerScreen() {
+    if (!staff) {
+      return [
+        panel('Panel del encargado', Icons.lock_outline, const [
+          Text('Acceso reservado al personal autorizado.'),
+        ]),
+      ];
+    }
+    final available = <int, String>{
+      for (final g in groups.where((g) => g['active'] == true))
+        g['id'] as int: g['name'] as String,
+      for (final t in turns.where(
+        (t) => isAdmin || t['teacher_id'] == user?['id'],
+      ))
+        t['group_id'] as int: t['group_name'] as String,
+      for (final s in students) s['group_id'] as int: s['group_name'] as String,
+    };
+    final roster = students
+        .where((s) => selectedGroup == null || s['group_id'] == selectedGroup)
+        .toList();
+    final count = roster.where((s) => s['registered_at'] != null).length;
+    return [
+      if (isAdmin)
+        panel('Control de turnos', Icons.schedule, [
+          Text(
+            'Turno actual: ${active?['group_name'] ?? 'Sin turno activo'}',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          if (active != null)
+            FilledButton(
+              onPressed:
+                  busy || connectionError != null || day?['status'] != 'running'
+                  ? null
+                  : () => command('/turns/${active!['id']}/finish'),
+              child: const Text('CAMBIAR TURNO'),
             ),
-            trailing:
-                isAdmin && (t['status'] == 'pending' || t['status'] == 'active')
-                ? PopupMenuButton<String>(
+          const SizedBox(height: 12),
+          Text(
+            'Siguiente turno: ${turns.where((t) => t['status'] == 'pending').map((t) => t['group_name']).firstOrNull ?? 'Sin turnos pendientes'}',
+          ),
+          if (day?['status'] == 'scheduled')
+            FilledButton(
+              onPressed: busy
+                  ? null
+                  : () => command('/admin/service-days/${day!['id']}/start'),
+              child: const Text('Iniciar jornada'),
+            ),
+          ExpansionTile(
+            title: const Text('Más controles de turnos'),
+            children: [
+              if (day?['status'] == 'running')
+                OutlinedButton(
+                  onPressed: busy
+                      ? null
+                      : () =>
+                            command('/admin/service-days/${day!['id']}/pause'),
+                  child: const Text('Pausar jornada'),
+                ),
+              if (day?['status'] == 'paused')
+                FilledButton(
+                  onPressed: busy
+                      ? null
+                      : () =>
+                            command('/admin/service-days/${day!['id']}/resume'),
+                  child: const Text('Reanudar jornada'),
+                ),
+              for (final t in turns.where(
+                (t) => t['status'] == 'pending' || t['status'] == 'active',
+              ))
+                ListTile(
+                  title: Text(t['group_name']),
+                  trailing: PopupMenuButton<String>(
                     enabled:
                         !busy &&
                         connectionError == null &&
                         day?['status'] != 'paused',
-                    onSelected: (action) => turnReason(t, action),
+                    onSelected: (v) => turnReason(t, v),
                     itemBuilder: (_) => const [
-                      PopupMenuItem(value: 'skip', child: Text('Omitir')),
-                      PopupMenuItem(value: 'cancel', child: Text('Cancelar')),
+                      PopupMenuItem(value: 'skip', child: Text('Omitir turno')),
+                      PopupMenuItem(
+                        value: 'cancel',
+                        child: Text('Cancelar turno'),
+                      ),
                     ],
-                  )
-                : null,
+                  ),
+                ),
+            ],
+          ),
+        ]),
+      panel('Estudiantes registrados', Icons.groups, [
+        if (attendanceError != null)
+          Text(attendanceError!, style: const TextStyle(color: Colors.red)),
+        DropdownButtonFormField<int>(
+          initialValue: available.containsKey(selectedGroup)
+              ? selectedGroup
+              : null,
+          decoration: const InputDecoration(labelText: 'Curso'),
+          items: [
+            const DropdownMenuItem<int>(
+              value: null,
+              child: Text('Todos los cursos'),
+            ),
+            for (final e in available.entries)
+              DropdownMenuItem(value: e.key, child: Text(e.value)),
+          ],
+          onChanged: (v) => setState(() => selectedGroup = v),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: attendanceStat(
+                'Registrados',
+                count,
+                const Color(0xffdff7e7),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: attendanceStat(
+                'Total esperado',
+                roster.length,
+                const Color(0xffeff2f7),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        LinearProgressIndicator(
+          value: roster.isEmpty ? 0 : count / roster.length,
+          minHeight: 14,
+          borderRadius: BorderRadius.circular(10),
+          color: const Color(0xff15995d),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${roster.isEmpty ? 0 : (count * 100 / roster.length).round()}% de asistencia',
+          textAlign: TextAlign.right,
+        ),
+        ExpansionTile(
+          title: const Text('Ver lista de estudiantes'),
+          children: [
+            if (roster.isEmpty)
+              const Text('No hay estudiantes creados para este curso.'),
+            for (final s in roster) studentRow(s),
+          ],
+        ),
+      ]),
+      if (isAdmin) ...[
+        OutlinedButton.icon(
+          onPressed: busy ? null : createStudent,
+          icon: const Icon(Icons.person_add_alt),
+          label: const Text('Crear estudiante'),
+        ),
+        ...adminScreen(),
+      ],
+    ];
+  }
+
+  Widget attendanceStat(String label, int count, Color color) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      children: [
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 12),
+        ),
+        Text(
+          '$count',
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        ),
+      ],
+    ),
+  );
+
+  Future<void> createStudent() async {
+    if (groups.isEmpty) {
+      showMessage('Crea primero un grupo.');
+      return;
+    }
+    final name = TextEditingController(), code = TextEditingController();
+    int group = groups.first['id'];
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: const Text('Crear estudiante'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: name,
+                maxLength: 120,
+                decoration: const InputDecoration(labelText: 'Nombre'),
+              ),
+              TextField(
+                controller: code,
+                maxLength: 80,
+                decoration: const InputDecoration(
+                  labelText: 'Código único (contenido del QR)',
+                ),
+              ),
+              DropdownButtonFormField<int>(
+                initialValue: group,
+                items: [
+                  for (final g in groups)
+                    DropdownMenuItem(
+                      value: g['id'] as int,
+                      child: Text(g['name']),
+                    ),
+                ],
+                onChanged: (v) => group = v!,
+              ),
+            ],
           ),
         ),
-      const SizedBox(height: 12),
-      const Text(
-        'Ingresa al restaurante cuando tu grupo aparezca en atención. Respeta la fila y las indicaciones del docente.',
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (name.text.trim().isNotEmpty && code.text.trim().isNotEmpty) {
+                Navigator.pop(c, true);
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
       ),
-    ];
+    );
+    if (result == true && mounted) {
+      setState(() => busy = true);
+      try {
+        await api.call(
+          '/students',
+          method: 'POST',
+          data: {
+            'name': name.text.trim(),
+            'code': code.text.trim(),
+            'group_id': group,
+          },
+        );
+        await loadStudents();
+        showMessage('Estudiante creado');
+      } catch (e) {
+        showMessage(readError(e));
+      } finally {
+        if (mounted) setState(() => busy = false);
+      }
+    }
+    // The closing route may still be animating when the dialog future completes.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    name.dispose();
+    code.dispose();
   }
 
   List<Widget> adminScreen() => [
@@ -1165,5 +1666,52 @@ class _UserEditDialogState extends State<UserEditDialog> {
       ),
       FilledButton(onPressed: submit, child: const Text('Guardar')),
     ],
+  );
+}
+
+class ScannerScreen extends StatefulWidget {
+  const ScannerScreen({super.key});
+  @override
+  State<ScannerScreen> createState() => _ScannerScreenState();
+}
+
+class _ScannerScreenState extends State<ScannerScreen> {
+  bool detected = false;
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Escanear código del estudiante')),
+    body: Column(
+      children: [
+        Expanded(
+          child: MobileScanner(
+            onDetect: (capture) {
+              if (detected) return;
+              for (final barcode in capture.barcodes) {
+                final code = barcode.rawValue;
+                if (code != null && code.trim().isNotEmpty) {
+                  detected = true;
+                  Navigator.pop(context, code.trim());
+                  break;
+                }
+              }
+            },
+            errorBuilder: (context, error) => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'No se pudo abrir la cámara. Revisa el permiso de cámara o vuelve para buscar al estudiante por su código.',
+                ),
+              ),
+            ),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Coloca el QR dentro de la cámara. El código debe coincidir con el del estudiante.',
+          ),
+        ),
+      ],
+    ),
   );
 }

@@ -67,3 +67,15 @@ MySQL conserva usuarios, sesiones, grupos, jornadas y auditoría en tablas InnoD
 Cambio desplegado y verificado en la API de producción el 23 de octubre de 2026. `PATCH /admin/users/{id}` acepta `name`, `username`, `active` y `password` como campos opcionales; debe enviarse al menos un cambio. Los campos omitidos se conservan. Nombre obligatorio de hasta 120 bytes; usuario de 3 a 80 bytes, normalizado a minúsculas y sin espacios exteriores. Un usuario duplicado devuelve 409 y un identificador inexistente, 404.
 
 Solo administradores pueden editar. Pueden corregir su propio nombre y usuario; su contraseña se cambia desde `/auth/password` y no pueden desactivar su propia cuenta. Nombre y usuario conservan sesiones; activar/desactivar o restablecer contraseña las revoca. Los cambios y la auditoría se guardan en una transacción. El rol y las asignaciones no se editan con esta operación.
+
+## Estudiantes y asistencia
+
+Estas rutas están disponibles en el backend 0.2.0 desplegado el 23 de octubre de 2026. Al arrancar se crean las tablas `students` y `attendance` sin modificar las tablas existentes.
+
+- `POST /students` (admin): `{"name":"María López","code":"EST-001","group_id":8}`. Crea un estudiante en un grupo activo. Código único, máximo 80 bytes; nombre obligatorio, máximo 120 bytes. El estudiante del padrón no necesita cuenta de acceso.
+- `GET /students` (admin/docente): lista `id`, `name`, `code`, `group_id`, `group_name`, `registered_at` (UTC o null). La asistencia corresponde al día actual en Colombia. Un docente solo puede consultar estudiantes de sus grupos activos. El total esperado se calcula con el padrón creado para cada grupo.
+- `POST /attendance` (admin/docente): `{"code":"EST-001"}`. Devuelve `{"ok":true,"name":"María López"}`. Requiere jornada en marcha y turno activo del curso; un docente solo puede registrar sus estudiantes. Una clave única por estudiante y fecha evita duplicados incluso ante solicitudes simultáneas. Duplicados, pausas o cursos fuera de turno devuelven 409. Código desconocido: 404.
+
+En la app, el administrador crea los estudiantes desde **Encargado → Crear estudiante**. El QR debe contener exactamente el código asignado, como texto. **Registro** permite leerlo con la cámara o buscar por nombre/código y pulsar **Registrar**. Si la cámara no está disponible se puede usar la búsqueda. Los estudiantes no tienen acceso al padrón ni a acciones de asistencia.
+
+Comprobar el escáner con cámara y permiso de Android en un dispositivo físico antes de distribuir la versión. Las pruebas automatizadas cubren navegación por rol, búsqueda/registro y restricciones del servidor; no sustituyen esa comprobación de cámara.

@@ -1,12 +1,13 @@
 name: protores
 description: Turnos del PAE de la Institución Educativa Cristóbal Colón, Mariano Ramos.
 publish_to: none
-version: 0.1.1+2
+version: 0.2.0+3
 environment:
   sdk: '>=3.10.0 <4.0.0'
 dependencies:
   flutter:
     sdk: flutter
+  mobile_scanner: ^7.4.2
   http: ^1.5.0
   flutter_secure_storage: ^10.0.0
   intl: ^0.20.2

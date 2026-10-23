@@ -87,3 +87,9 @@ Actualización del 23 de octubre de 2026: la página ya está publicada en https
 ## Editar usuarios · APK 0.1.1
 
 API 0.1.1 desplegada y APK publicado; instalar la actualización con la misma firma sobre 0.1.0. En **Administrar → Usuarios**, tocar el usuario o abrir **Opciones → Editar usuario**. Corregir nombre o usuario de acceso y pulsar **Guardar**. Se conservan rol, asignaciones y estado de acceso. El administrador también puede corregir sus propios datos. Activar/desactivar y restablecer contraseñas siguen disponibles para otras cuentas; el candado permite cambiar la contraseña propia.
+
+## Diseño y asistencia · versión 0.2.0
+
+El backend 0.2.0 está desplegado con respaldo previo, comprobación de salud y consultas autenticadas de estado y padrón. Crea las tablas `students` y `attendance` al arrancar. No se cargaron estudiantes ficticios en producción.
+
+La navegación ahora es **Inicio**, **Turno actual**, **Registro** y **Encargado**. El administrador encuentra usuarios, grupos y programación en Encargado. Para asistencia, crear primero los estudiantes de cada grupo; el QR contiene su código único. Docentes solo consultan y registran estudiantes de sus grupos; el curso debe estar en atención y la jornada en marcha. No se permite un segundo ingreso el mismo día.
