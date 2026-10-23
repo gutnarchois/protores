@@ -86,4 +86,4 @@ Actualización del 23 de octubre de 2026: la página ya está publicada en https
 
 ## Editar usuarios · APK 0.1.1
 
-Implementación preparada; requiere desplegar primero la API 0.1.1. En **Administrar → Usuarios**, tocar el usuario o abrir **Opciones → Editar usuario**. Corregir nombre o usuario de acceso y pulsar **Guardar**. Se conservan rol, asignaciones y estado de acceso. El administrador también puede corregir sus propios datos. Activar/desactivar y restablecer contraseñas siguen disponibles para otras cuentas; el candado permite cambiar la contraseña propia.
+API 0.1.1 desplegada y APK publicado; instalar la actualización con la misma firma sobre 0.1.0. En **Administrar → Usuarios**, tocar el usuario o abrir **Opciones → Editar usuario**. Corregir nombre o usuario de acceso y pulsar **Guardar**. Se conservan rol, asignaciones y estado de acceso. El administrador también puede corregir sus propios datos. Activar/desactivar y restablecer contraseñas siguen disponibles para otras cuentas; el candado permite cambiar la contraseña propia.

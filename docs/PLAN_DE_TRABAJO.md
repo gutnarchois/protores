@@ -4,10 +4,10 @@ Fecha de elaboración: 23 de octubre de 2026.
 Institución: Institución Educativa Cristóbal Colón, sede Mariano Ramos (nombre oficial por confirmar).
 Última actualización: 23 de octubre de 2026.
 
-Estado: MVP implementado; API desplegada; APK firmado 0.1.0 y página de descarga publicados y verificados. Pendientes: validación en celulares físicos, acuerdos operativos y piloto institucional.
+Estado: MVP implementado; API actualizada; APK firmado 0.1.1 y página de descarga publicados y verificados. Pendientes: validación en celulares físicos, acuerdos operativos y piloto institucional.
 
 - [API de producción](https://restaurante.in4.blue/api/v1) · [Salud del servicio](https://restaurante.in4.blue/healthz).
-- [Página de descarga](https://iecc.page.gd/protores/) · [Versión 0.1.0 y SHA-256](https://github.com/gutnarchois/protores/releases/tag/v0.1.0).
+- [Página de descarga](https://iecc.page.gd/protores/) · [Versión 0.1.1 y SHA-256](https://github.com/gutnarchois/protores/releases/tag/v0.1.1).
 - [Repositorio](https://github.com/gutnarchois/protores) · [Comprobaciones aprobadas](https://github.com/gutnarchois/protores/actions/runs/39966985407).
 
 ## 1. Objetivo
@@ -226,9 +226,9 @@ Actualizar las casillas cuando exista evidencia del entregable; registrar decisi
 | --- | --- | --- | --- | --- |
 | Requisitos y revisión del servidor | Ninguna | Institución y desarrollo | Parcial | Inventario técnico realizado; faltan acuerdos y revisión institucional |
 | API y MySQL | Requisitos | Desarrollo backend | Implementado | Migraciones y flujo de turnos probado |
-| App Android | Contrato de API | Desarrollo Flutter | APK 0.1.0 publicado | Análisis, prueba Flutter y firma aprobados; falta validación en celulares |
+| App Android | Contrato de API | Desarrollo Flutter | APK 0.1.1 publicado | Análisis, prueba Flutter y firma aprobados; falta validación en celulares |
 | API en producción | API validada e inventario | Operación del VPS | Desplegada | HTTPS, respaldo y restauración verificados |
-| Descarga del APK | App y firma | Responsable de publicación | Publicada y verificada | Release 0.1.0 y página HTTPS en iecc.page.gd/protores/; falta instalación física |
+| Descarga del APK | App y firma | Responsable de publicación | Publicada y verificada | Release 0.1.1 y página HTTPS en iecc.page.gd/protores/; falta instalación física |
 | Piloto y entrega | App, API y descarga | Institución y desarrollo | Pendiente | Jornada aceptada y manuales entregados |
 
 Los responsables son funciones propuestas, aún sin personas asignadas. Las fechas de entrega se fijarán después de revisar la disponibilidad del equipo y los accesos; el orden de las fases indica las dependencias, no un compromiso de calendario.
@@ -289,7 +289,7 @@ Los responsables son funciones propuestas, aún sin personas asignadas. Las fech
 
 La publicación técnica está completada. La aceptación institucional y la puesta en uso siguen pendientes; no se fija una fecha sin acordarla con la institución.
 
-## 18. Edición de usuarios · versión 0.1.1 en preparación
+## 18. Edición de usuarios · versión 0.1.1 publicada
 
 - [x] Añadir «Editar usuario» en el panel administrador, con nombre y usuario actuales precargados y validación del formulario.
 - [x] Permitir corregir el nombre y usuario del propio administrador; mantener la gestión de estado y contraseñas de otras cuentas.
@@ -297,9 +297,17 @@ La publicación técnica está completada. La aceptación institucional y la pue
 - [x] Aprobar pruebas MySQL con detector de carreras: permisos, duplicados, cuenta inexistente, conservación de estado/sesiones y cambio de contraseña.
 - [x] Aprobar prueba Flutter de precarga, validación y resultado del editor.
 - [x] Compilar APK 0.1.1 (código 2) y verificar la misma firma de producción que 0.1.0.
-- [ ] Desplegar API 0.1.1 en restaurante.in4.blue; pendiente acceso SSH al servidor 104.236.125.219.
-- [ ] Publicar APK 0.1.1 como versión estable después de activar y verificar la API.
+- [x] Desplegar API 0.1.1 en restaurante.in4.blue, con respaldo previo y comprobación del binario cargado.
+- [x] Publicar APK 0.1.1 como versión estable después de activar y verificar la API.
 
-La versión estable disponible al público sigue siendo 0.1.0.
+La versión estable disponible al público es [0.1.1](https://github.com/gutnarchois/protores/releases/tag/v0.1.1), código Android 2; conserva la firma de 0.1.0.
 
 Artefactos 0.1.1 preparados localmente: `.private/release/0.1.1/protores-android.apk` y `.private/protores-api-0.1.1`. SHA-256 APK: `849a5ed518b4b3e438baa61868f0c537e70bd02b8b2961165fda6467ffa709c9`. Firma: `123493b3b9bcf841dac83c585f1cb077c4b1b62ce4ab71e2c84605554d8b2679`.
+
+### Activación de 0.1.1 · 23 de octubre de 2026
+
+- Acceso SSH al servidor de producción confirmado. Credenciales conservadas únicamente en `.private/`, fuera de Git.
+- Respaldo ejecutado con `/usr/local/sbin/protores-backup`; copia adicional del binario anterior para reversión. Nuevo binario instalado con propietario root, grupo protores y permisos 750. Servicio reiniciado y salud local aprobada. Sin cambios de esquema.
+- Comprobación por HTTPS: login administrativo, PATCH con nombre/usuario actuales, conservación de cuenta y sesión, consulta de estado y logout aprobados. `/healthz` e `in4.blue` responden HTTP 200.
+- GitHub Actions de la implementación: https://github.com/gutnarchois/protores/actions/runs/39980170996 (aprobada).
+- Release 0.1.1 publicado con APK, ZIP web y SHA256SUMS; página de descarga actualizada a 0.1.1. Instalación y actualización en dispositivos físicos y piloto institucional siguen pendientes.

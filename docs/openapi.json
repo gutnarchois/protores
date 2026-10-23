@@ -319,7 +319,7 @@
     },
     "/admin/users/{id}": {
       "patch": {
-        "summary": "Editar nombre, usuario o acceso (0.1.1; despliegue pendiente)",
+        "summary": "Editar nombre, usuario o acceso",
         "responses": {
           "200": {
             "description": "Operación correcta"
