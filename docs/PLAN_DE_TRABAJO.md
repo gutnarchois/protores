@@ -296,7 +296,10 @@ La publicación técnica está completada. La aceptación institucional y la pue
 - [x] Ampliar PATCH de usuarios con edición parcial, conservación de campos omitidos, conflicto por usuario duplicado y actualización con auditoría transaccional.
 - [x] Aprobar pruebas MySQL con detector de carreras: permisos, duplicados, cuenta inexistente, conservación de estado/sesiones y cambio de contraseña.
 - [x] Aprobar prueba Flutter de precarga, validación y resultado del editor.
+- [x] Compilar APK 0.1.1 (código 2) y verificar la misma firma de producción que 0.1.0.
 - [ ] Desplegar API 0.1.1 en restaurante.in4.blue; pendiente acceso SSH al servidor 104.236.125.219.
 - [ ] Publicar APK 0.1.1 como versión estable después de activar y verificar la API.
 
 La versión estable disponible al público sigue siendo 0.1.0.
+
+Artefactos 0.1.1 preparados localmente: `.private/release/0.1.1/protores-android.apk` y `.private/protores-api-0.1.1`. SHA-256 APK: `849a5ed518b4b3e438baa61868f0c537e70bd02b8b2961165fda6467ffa709c9`. Firma: `123493b3b9bcf841dac83c585f1cb077c4b1b62ce4ab71e2c84605554d8b2679`.
