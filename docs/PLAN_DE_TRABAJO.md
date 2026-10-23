@@ -2,7 +2,7 @@
 
 Fecha de elaboración: 23 de octubre de 2026.
 Institución: Institución Educativa Cristóbal Colón, sede Mariano Ramos (nombre oficial por confirmar).
-Estado: MVP implementado; API desplegada y verificada; compilación Android y publicación en curso. Piloto institucional pendiente.
+Estado: MVP implementado; API desplegada y verificada; APK firmado 0.1.0 publicado en GitHub Releases. Piloto institucional pendiente.
 
 ## 1. Objetivo
 
@@ -156,9 +156,9 @@ Documentar contratos en OpenAPI, fechas, paginación, códigos de error y confli
 
 - [x] Confirmar nombre del repositorio y paquete Android: existen referencias iniciales a «proteres», pero el producto solicitado es «Protores».
 - [x] Configurar firma de producción y custodiar la clave fuera de Git; conservarla para futuras actualizaciones.
-- [ ] Publicar APK firmado, versión, notas y suma SHA-256 en GitHub Releases.
+- [x] Publicar APK firmado, versión, notas y suma SHA-256 en GitHub Releases.
 - [ ] Crear página de descarga en `web/` y publicarla en iecc.page.gd con enlace HTTPS a la versión estable.
-- [ ] Explicar los pasos de instalación de un APK externo y mostrar versión y fecha.
+- [x] Explicar los pasos de instalación de un APK externo y mostrar versión y fecha.
 - [ ] Probar descarga, instalación limpia y actualización conservando datos y sesión según la política acordada.
 
 **Entregable:** descarga accesible desde iecc.page.gd y APK instalable.
@@ -247,3 +247,13 @@ Los responsables son funciones propuestas, aún sin personas asignadas. Las fech
 - Rutas del módulo Go y enlaces de descarga corregidos a `protores`.
 - `flutter analyze` y `flutter test`: aprobados. `go test -race ./...` y `go vet ./...`: aprobados con caché aislada. Las pruebas MySQL de integración requieren una base desechable y no se repitieron en esta verificación.
 - Compilación Android reintentada con caché Gradle aislada tras detectar corrupción de metadatos en la caché anterior.
+
+## Distribución 0.1.0 · 23 de octubre de 2026
+
+- Publicación: https://github.com/gutnarchois/protores/releases/tag/v0.1.0
+- APK firmado: `protores-android.apk`, 51 477 864 bytes, Android 7.0 o superior, paquete `co.edu.iecc.protores`, versión `0.1.0`, código `1`. Firma de producción verificada con `apksigner`.
+- SHA-256 APK: `a8d2e1e5bc03a4774907f35d2328e8fead2adaace9dd184f8e9e53868119b2c4`. Coincide con el digest del archivo publicado en GitHub. Enlace público de descarga comprobado: HTTP 200.
+- `protores-web.zip` y `SHA256SUMS` incluidos en la versión. Página preparada para publicación manual con el usuario en iecc.page.gd.
+- GitHub Actions: backend con MySQL y Flutter aprobados en la ejecución https://github.com/gutnarchois/protores/actions/runs/39966985407.
+- Entorno local reparado: caché Go y Gradle aisladas, NDK, SDK Android 35 y CMake instalados, JDK 21 completo en `/home/gutnar/.local/share/protores-tools/jdk21`; Flutter configurado para ese JDK. Para recompilar localmente: `GOMODCACHE=/home/gutnar/.cache/protores-go` y `GRADLE_USER_HOME=/home/gutnar/.cache/protores-gradle-clean` según la herramienta.
+- Pendiente: instalación y actualización en celulares físicos, publicación manual en iecc.page.gd y piloto institucional. No había dispositivos conectados para comprobar instalación.

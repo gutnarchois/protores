@@ -44,4 +44,4 @@ TEST_MYSQL_DSN='usuario:clave@tcp(127.0.0.1:3306)/protores_test' go test -race .
 
 La firma Android requiere `mobile/android/key.properties`, que está excluido de Git. Consultar la guía de operación. El repositorio es `gutnarchois/protores`; el producto y el paquete Android se llaman **Protores** y `co.edu.iecc.protores`.
 
-Primera versión para piloto: falta la validación presencial de la institución. No incluye asistencia individual, QR ni inventario de alimentos.
+Versión 0.1.0 publicada para Android 7.0 o superior. Primera versión para piloto: falta la validación presencial de la institución. No incluye asistencia individual, QR ni inventario de alimentos.
