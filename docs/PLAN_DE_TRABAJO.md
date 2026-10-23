@@ -1,7 +1,7 @@
 # Plan de trabajo — Protores
 
-Fecha de elaboración: 23 de octubre de 2026.  
-Institución: Institución Educativa Cristóbal Colón, sede Mariano Ramos (nombre oficial por confirmar).  
+Fecha de elaboración: 23 de octubre de 2026.
+Institución: Institución Educativa Cristóbal Colón, sede Mariano Ramos (nombre oficial por confirmar).
 Estado: MVP implementado; API desplegada y verificada; compilación Android y publicación en curso. Piloto institucional pendiente.
 
 ## 1. Objetivo
@@ -198,7 +198,7 @@ La conexión y los cambios reales del VPS, DNS, GitHub y alojamiento web se real
 ## 11. Organización del repositorio
 
 ```text
-mobile/                 App Flutter Android (pendiente)
+mobile/                 App Flutter Android implementada
 backend/                API Go y migraciones MySQL
 deploy/                 Servicio systemd, proxy y guía de despliegue
 scripts/                Automatización de desarrollo, respaldo y publicación
@@ -216,9 +216,9 @@ Actualizar las casillas cuando exista evidencia del entregable; registrar decisi
 | Hito | Dependencia | Responsable propuesto | Estado | Evidencia para cerrar |
 | --- | --- | --- | --- | --- |
 | Requisitos y revisión del servidor | Ninguna | Institución y desarrollo | Pendiente | Reglas acordadas e inventario técnico |
-| API y MySQL | Requisitos | Desarrollo backend | Pendiente | Migraciones y flujo de turnos probado |
-| App Android | Contrato de API | Desarrollo Flutter | Pendiente | APK de prueba con los tres roles |
-| API en producción | API validada e inventario | Operación del VPS | Pendiente | HTTPS, respaldo y restauración verificados |
+| API y MySQL | Requisitos | Desarrollo backend | Implementado | Migraciones y flujo de turnos probado |
+| App Android | Contrato de API | Desarrollo Flutter | Implementada; APK pendiente | APK de prueba con los tres roles |
+| API en producción | API validada e inventario | Operación del VPS | Desplegada | HTTPS, respaldo y restauración verificados |
 | Descarga del APK | App validada y firma | Responsable de publicación | Pendiente | GitHub Release y enlace en iecc.page.gd |
 | Piloto y entrega | App, API y descarga | Institución y desarrollo | Pendiente | Jornada aceptada y manuales entregados |
 
@@ -239,3 +239,11 @@ Los responsables son funciones propuestas, aún sin personas asignadas. Las fech
 - Sesiones de 12 horas con nuevo login al vencer; renovación de sesión queda fuera de esta versión.
 - El usuario indicó que la publicación de `iecc.page.gd` será manual con él. Preparar ZIP estático e instrucciones; no se considera publicado hasta su comprobación.
 - Credenciales y material de firma conservados en `.private/`, excluidos de Git. No se utilizaron ni cambiaron las contraseñas de otros servicios.
+
+## Recuperación y publicación del repositorio · 23 de octubre de 2026
+
+- Repositorio confirmado: `https://github.com/gutnarchois/protores`. Código publicado en `main`.
+- Git local recuperado desde el repositorio remoto; metadatos dañados conservados fuera del proyecto en `/home/gutnar/protores-git-respaldo-q5REBG/`.
+- Rutas del módulo Go y enlaces de descarga corregidos a `protores`.
+- `flutter analyze` y `flutter test`: aprobados. `go test -race ./...` y `go vet ./...`: aprobados con caché aislada. Las pruebas MySQL de integración requieren una base desechable y no se repitieron en esta verificación.
+- Compilación Android reintentada con caché Gradle aislada tras detectar corrupción de metadatos en la caché anterior.
