@@ -1,0 +1,24 @@
+[Unit]
+Description=Protores PAE API
+After=network.target mysql.service
+Requires=mysql.service
+
+[Service]
+User=protores
+Group=protores
+EnvironmentFile=/etc/protores.env
+WorkingDirectory=/opt/protores
+ExecStart=/opt/protores/protores-api
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
