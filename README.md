@@ -8,7 +8,7 @@ Aplicación Android en Flutter para organizar los turnos del PAE de la Instituci
 
 API desplegada: https://restaurante.in4.blue/api/v1 · [Estado del servicio](https://restaurante.in4.blue/healthz).
 
-[Descargar APK](https://github.com/gutnarchois/protores/releases/latest) · [Plan de trabajo](docs/PLAN_DE_TRABAJO.md) · [Operación e instalación](docs/OPERACION.md) · [Contrato de API](docs/API.md).
+[Página de descarga](https://iecc.page.gd/protores/) · [Descargar APK](https://github.com/gutnarchois/protores/releases/latest) · [Plan de trabajo](docs/PLAN_DE_TRABAJO.md) · [Operación e instalación](docs/OPERACION.md) · [Contrato de API](docs/API.md).
 
 ## Desarrollo
 

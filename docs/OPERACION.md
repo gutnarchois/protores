@@ -79,3 +79,6 @@ En Android, autorizar la instalación desde la aplicación usada para descargar 
 ## iecc.page.gd
 
 El dominio no respondió por HTTP/HTTPS durante la implementación. El usuario realizará la publicación manualmente. El ZIP y `web/LEEME_PUBLICACION.md` contienen la página y los pasos; la publicación allí sigue pendiente. La distribución por GitHub Releases funciona independientemente de ese alojamiento; se puede añadir allí el enlace estable al APK cuando esté disponible el acceso.
+
+
+Actualización del 23 de octubre de 2026: la página ya está publicada en https://iecc.page.gd/protores/ y enlazada desde el portal principal. El alojamiento requiere JavaScript para su comprobación de navegador. Se conservó el portal existente y se respaldaron sus archivos en `.private/ftp-backup/`.

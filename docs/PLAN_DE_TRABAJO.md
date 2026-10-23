@@ -157,7 +157,7 @@ Documentar contratos en OpenAPI, fechas, paginación, códigos de error y confli
 - [x] Confirmar nombre del repositorio y paquete Android: existen referencias iniciales a «proteres», pero el producto solicitado es «Protores».
 - [x] Configurar firma de producción y custodiar la clave fuera de Git; conservarla para futuras actualizaciones.
 - [x] Publicar APK firmado, versión, notas y suma SHA-256 en GitHub Releases.
-- [ ] Crear página de descarga en `web/` y publicarla en iecc.page.gd con enlace HTTPS a la versión estable.
+- [x] Crear página de descarga en `web/` y publicarla en iecc.page.gd con enlace HTTPS a la versión estable.
 - [x] Explicar los pasos de instalación de un APK externo y mostrar versión y fecha.
 - [ ] Probar descarga, instalación limpia y actualización conservando datos y sesión según la política acordada.
 
@@ -257,3 +257,11 @@ Los responsables son funciones propuestas, aún sin personas asignadas. Las fech
 - GitHub Actions: backend con MySQL y Flutter aprobados en la ejecución https://github.com/gutnarchois/protores/actions/runs/39966985407.
 - Entorno local reparado: caché Go y Gradle aisladas, NDK, SDK Android 35 y CMake instalados, JDK 21 completo en `/home/gutnar/.local/share/protores-tools/jdk21`; Flutter configurado para ese JDK. Para recompilar localmente: `GOMODCACHE=/home/gutnar/.cache/protores-go` y `GRADLE_USER_HOME=/home/gutnar/.cache/protores-gradle-clean` según la herramienta.
 - Pendiente: instalación y actualización en celulares físicos, publicación manual en iecc.page.gd y piloto institucional. No había dispositivos conectados para comprobar instalación.
+
+## Publicación web · 23 de octubre de 2026
+
+- Página publicada en https://iecc.page.gd/protores/ mediante FTPS.
+- Portal existente conservado; añadido enlace «Protores · PAE» al menú principal.
+- Archivos originales respaldados localmente en `.private/ftp-backup/`; credenciales fuera de Git.
+- Contenido subido comprobado mediante descarga FTPS. Página pública verificada por HTTPS (HTTP 200 y contenido idéntico a `web/dist/index.html`) tras resolver la comprobación JavaScript del alojamiento.
+- Pendientes: instalación y actualización en celulares físicos y piloto institucional.
