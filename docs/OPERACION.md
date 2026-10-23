@@ -82,3 +82,8 @@ El dominio no respondió por HTTP/HTTPS durante la implementación. El usuario r
 
 
 Actualización del 23 de octubre de 2026: la página ya está publicada en https://iecc.page.gd/protores/ y enlazada desde el portal principal. El alojamiento requiere JavaScript para su comprobación de navegador. Se conservó el portal existente y se respaldaron sus archivos en `.private/ftp-backup/`.
+
+
+## Editar usuarios · APK 0.1.1
+
+Implementación preparada; requiere desplegar primero la API 0.1.1. En **Administrar → Usuarios**, tocar el usuario o abrir **Opciones → Editar usuario**. Corregir nombre o usuario de acceso y pulsar **Guardar**. Se conservan rol, asignaciones y estado de acceso. El administrador también puede corregir sus propios datos. Activar/desactivar y restablecer contraseñas siguen disponibles para otras cuentas; el candado permite cambiar la contraseña propia.

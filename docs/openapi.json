@@ -319,7 +319,7 @@
     },
     "/admin/users/{id}": {
       "patch": {
-        "summary": "Cambiar acceso o restablecer contraseña",
+        "summary": "Editar nombre, usuario o acceso (0.1.1; despliegue pendiente)",
         "responses": {
           "200": {
             "description": "Operación correcta"
@@ -335,6 +335,9 @@
           },
           "409": {
             "description": "Conflicto de estado o recurso"
+          },
+          "404": {
+            "description": "Usuario no encontrado"
           }
         },
         "requestBody": {
@@ -349,6 +352,14 @@
                   },
                   "password": {
                     "type": "string"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nombre obligatorio si se envía; hasta 120 bytes"
+                  },
+                  "username": {
+                    "type": "string",
+                    "description": "Usuario único; entre 3 y 80 bytes; se normaliza a minúsculas"
                   }
                 }
               }

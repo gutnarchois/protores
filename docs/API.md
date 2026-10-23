@@ -34,7 +34,7 @@ El contador se calcula desde `started_at` usando la hora del servidor, la duraci
 | --- | --- | --- |
 | GET | /admin/users | Hasta 1000 usuarios, sin hashes ni contraseñas |
 | POST | /admin/users | `name`, `username`, `password` (12–72 bytes), `role` |
-| PATCH | /admin/users/{id} | `active` y `password` opcional para restablecerla; revoca sesiones |
+| PATCH | /admin/users/{id} | `name`, `username`, `active` y `password` opcionales; edición parcial de datos o acceso |
 | GET | /admin/groups | Grupos y docente asignado |
 | POST | /admin/groups | `name`, `teacher_id` de un docente activo |
 | POST | /admin/service-days | `date`, `start` (HH:MM Colombia), `minutes` (1–120), `group_ids` en orden |
@@ -61,3 +61,9 @@ JSON `{"error":"Descripción"}`. 400: datos inválidos; 401: sesión inválida o
 ## Persistencia
 
 MySQL conserva usuarios, sesiones, grupos, jornadas y auditoría en tablas InnoDB. En esta versión, los turnos son un documento JSON dentro de `service_days.state`; el bloqueo de esa fila garantiza una sola secuencia activa. No se implementaron tablas independientes `turns`/`operations`: la repetición segura de finalización se basa en el estado persistido del turno. Separarlas será una migración posterior si los reportes lo requieren.
+
+## Edición de usuarios · versión 0.1.1
+
+Cambio implementado y pendiente de desplegar en la API de producción. `PATCH /admin/users/{id}` acepta `name`, `username`, `active` y `password` como campos opcionales; debe enviarse al menos un cambio. Los campos omitidos se conservan. Nombre obligatorio de hasta 120 bytes; usuario de 3 a 80 bytes, normalizado a minúsculas y sin espacios exteriores. Un usuario duplicado devuelve 409 y un identificador inexistente, 404.
+
+Solo administradores pueden editar. Pueden corregir su propio nombre y usuario; su contraseña se cambia desde `/auth/password` y no pueden desactivar su propia cuenta. Nombre y usuario conservan sesiones; activar/desactivar o restablecer contraseña las revoca. Los cambios y la auditoría se guardan en una transacción. El rol y las asignaciones no se editan con esta operación.

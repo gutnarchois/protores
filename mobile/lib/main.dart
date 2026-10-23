@@ -732,21 +732,25 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         subtitle: Text(
           '${u['username']} · ${u['role']} · ${u['active'] ? 'Activo' : 'Inactivo'}',
         ),
-        trailing: u['id'] == user!['id']
-            ? null
-            : PopupMenuButton<String>(
-                onSelected: (action) => manageUser(u, action),
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'toggle',
-                    child: Text(u['active'] ? 'Desactivar' : 'Activar'),
-                  ),
-                  const PopupMenuItem(
-                    value: 'password',
-                    child: Text('Restablecer contraseña'),
-                  ),
-                ],
+        onTap: busy ? null : () => editUser(u),
+        trailing: PopupMenuButton<String>(
+          enabled: !busy,
+          tooltip: 'Opciones de usuario',
+          onSelected: (action) => manageUser(u, action),
+          itemBuilder: (_) => [
+            const PopupMenuItem(value: 'edit', child: Text('Editar usuario')),
+            if (u['id'] != user!['id']) ...[
+              PopupMenuItem(
+                value: 'toggle',
+                child: Text(u['active'] ? 'Desactivar' : 'Activar'),
               ),
+              const PopupMenuItem(
+                value: 'password',
+                child: Text('Restablecer contraseña'),
+              ),
+            ],
+          ],
+        ),
       ),
   ];
   Future<Map<String, String>?> fieldsDialog(
@@ -977,8 +981,28 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> editUser(dynamic u) async {
+    if (busy) return;
+    final data = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (_) => UserEditDialog(name: u['name'], username: u['username']),
+    );
+    if (data == null || !mounted) return;
+    await save('/admin/users/${u['id']}', data, method: 'PATCH');
+    if (u['id'] == user?['id']) {
+      try {
+        final updated = Map<String, dynamic>.from(await api.call('/me'));
+        if (mounted) setState(() => user = updated);
+      } catch (e) {
+        showMessage(readError(e));
+      }
+    }
+  }
+
   Future<void> manageUser(dynamic u, String action) async {
-    if (action == 'toggle') {
+    if (action == 'edit') {
+      await editUser(u);
+    } else if (action == 'toggle') {
       if (await confirm(
         'Cambiar acceso',
         '${u['active'] ? 'Desactivar' : 'Activar'} a ${u['name']}?',
@@ -1059,4 +1083,87 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       showMessage(readError(e));
     }
   }
+}
+
+class UserEditDialog extends StatefulWidget {
+  const UserEditDialog({super.key, required this.name, required this.username});
+
+  final String name;
+  final String username;
+
+  @override
+  State<UserEditDialog> createState() => _UserEditDialogState();
+}
+
+class _UserEditDialogState extends State<UserEditDialog> {
+  final formKey = GlobalKey<FormState>();
+  late final name = TextEditingController(text: widget.name);
+  late final username = TextEditingController(text: widget.username);
+
+  @override
+  void dispose() {
+    name.dispose();
+    username.dispose();
+    super.dispose();
+  }
+
+  void submit() {
+    if (formKey.currentState!.validate()) {
+      Navigator.pop(context, {
+        'name': name.text.trim(),
+        'username': username.text.trim().toLowerCase(),
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Editar usuario'),
+    content: SingleChildScrollView(
+      child: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: name,
+              decoration: const InputDecoration(labelText: 'Nombre'),
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Escribe el nombre'
+                  : utf8.encode(value.trim()).length > 120
+                  ? 'El nombre es demasiado largo'
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: username,
+              decoration: const InputDecoration(labelText: 'Usuario de acceso'),
+              autocorrect: false,
+              enableSuggestions: false,
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => submit(),
+              validator: (value) {
+                final length = utf8
+                    .encode(value?.trim().toLowerCase() ?? '')
+                    .length;
+                if (length < 3) {
+                  return 'Escribe un usuario de al menos 3 caracteres';
+                }
+                return length > 80 ? 'El usuario es demasiado largo' : null;
+              },
+            ),
+          ],
+        ),
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton(onPressed: submit, child: const Text('Guardar')),
+    ],
+  );
 }

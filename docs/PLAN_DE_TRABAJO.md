@@ -288,3 +288,15 @@ Los responsables son funciones propuestas, aún sin personas asignadas. Las fech
 7. Programar la siguiente iteración para editar grupos y jornadas existentes. La renovación de sesión, notificaciones y otros cambios de alcance requieren priorización aparte.
 
 La publicación técnica está completada. La aceptación institucional y la puesta en uso siguen pendientes; no se fija una fecha sin acordarla con la institución.
+
+## 18. Edición de usuarios · versión 0.1.1 en preparación
+
+- [x] Añadir «Editar usuario» en el panel administrador, con nombre y usuario actuales precargados y validación del formulario.
+- [x] Permitir corregir el nombre y usuario del propio administrador; mantener la gestión de estado y contraseñas de otras cuentas.
+- [x] Ampliar PATCH de usuarios con edición parcial, conservación de campos omitidos, conflicto por usuario duplicado y actualización con auditoría transaccional.
+- [x] Aprobar pruebas MySQL con detector de carreras: permisos, duplicados, cuenta inexistente, conservación de estado/sesiones y cambio de contraseña.
+- [x] Aprobar prueba Flutter de precarga, validación y resultado del editor.
+- [ ] Desplegar API 0.1.1 en restaurante.in4.blue; pendiente acceso SSH al servidor 104.236.125.219.
+- [ ] Publicar APK 0.1.1 como versión estable después de activar y verificar la API.
+
+La versión estable disponible al público sigue siendo 0.1.0.

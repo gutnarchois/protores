@@ -369,33 +369,7 @@ func (a *App) route(r *http.Request, u User, token string) (any, error) {
 		if e != nil {
 			return nil, fail(400, "Usuario inválido")
 		}
-		var p struct {
-			Active   bool   `json:"active"`
-			Password string `json:"password"`
-		}
-		if e = decode(r, &p); e != nil {
-			return nil, e
-		}
-		if id == u.ID {
-			return nil, fail(400, "No puedes modificar tu propio acceso aquí")
-		}
-		if p.Password != "" {
-			if len(p.Password) < 12 || len(p.Password) > 72 {
-				return nil, fail(400, "Contraseña: 12–72 bytes")
-			}
-			h, _ := bcrypt.GenerateFromPassword([]byte(p.Password), 12)
-			_, e = a.db.ExecContext(ctx, "UPDATE users SET password_hash=?,active=? WHERE id=?", string(h), p.Active, id)
-		} else {
-			_, e = a.db.ExecContext(ctx, "UPDATE users SET active=? WHERE id=?", p.Active, id)
-		}
-		if e != nil {
-			return nil, e
-		}
-		_, e = a.db.ExecContext(ctx, "DELETE FROM sessions WHERE user_id=?", id)
-		if e != nil {
-			return nil, e
-		}
-		return map[string]bool{"ok": true}, a.audit(ctx, u.ID, "user.update", id, map[string]bool{"active": p.Active, "password_reset": p.Password != ""})
+		return a.updateUser(r, u, id)
 	case path == "/admin/groups" && r.Method == "GET":
 		rows, e := a.db.QueryContext(ctx, "SELECT id,name,teacher_id,active FROM school_groups ORDER BY name")
 		if e != nil {
