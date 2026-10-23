@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Protores API",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "Detalles y reglas en docs/API.md. Sesiones de 12 horas. Roles admin, teacher, student."
   },
   "servers": [
@@ -481,6 +481,39 @@
                     "type": "array",
                     "items": {
                       "type": "integer"
+                    }
+                  },
+                  "turns": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "group_id",
+                        "start",
+                        "minutes"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "ID existente; 0 para añadir un turno"
+                        },
+                        "group_id": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "start": {
+                          "type": "string",
+                          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                        },
+                        "minutes": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 120
+                        }
+                      }
                     }
                   }
                 }
@@ -988,6 +1021,101 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/admin/service-days/{id}": {
+      "patch": {
+        "summary": "Editar horarios por grupo (solo admin)",
+        "description": "Requiere lista completa de turnos y versión actual. Conserva activo e historial, permite modificar pendientes. No cambia la fecha.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "date",
+                  "version",
+                  "turns"
+                ],
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "turns": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "group_id",
+                        "start",
+                        "minutes"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "ID existente; 0 para añadir un turno"
+                        },
+                        "group_id": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "start": {
+                          "type": "string",
+                          "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                        },
+                        "minutes": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 120
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operación correcta"
+          },
+          "400": {
+            "description": "Datos inválidos"
+          },
+          "401": {
+            "description": "Sesión inválida"
+          },
+          "403": {
+            "description": "Permisos insuficientes"
+          },
+          "409": {
+            "description": "Conflicto de estado o recurso"
+          },
+          "404": {
+            "description": "Jornada no encontrada"
           }
         }
       }

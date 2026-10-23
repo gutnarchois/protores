@@ -40,7 +40,7 @@ El contador se calcula desde `started_at` usando la hora del servidor, la duraci
 | POST | /admin/service-days | `date`, `start` (HH:MM Colombia), `minutes` (1–120), `group_ids` en orden |
 | GET | /admin/audit | Últimas 100 acciones, más recientes primero |
 
-La versión inicial permite una programación por fecha. Antes de crearla, revisar orden, docentes, hora y duración. La edición de una programación existente y de grupos queda para la siguiente iteración; durante la atención el administrador puede omitir o cancelar con motivo. Las asignaciones se copian a la programación para mantener su historial.
+Se permite una programación por fecha. El administrador puede crear o editar los horarios de cada grupo; durante la atención solo puede modificar turnos pendientes. También puede omitir o cancelar con motivo. La edición del catálogo de grupos no forma parte de esta operación. Las asignaciones se copian a la programación para mantener su historial.
 
 ## Cambios de estado
 
@@ -79,3 +79,15 @@ Estas rutas están disponibles en el backend 0.2.0 desplegado el 23 de octubre d
 En la app, el administrador crea los estudiantes desde **Encargado → Crear estudiante**. El QR debe contener exactamente el código asignado, como texto. **Registro** permite leerlo con la cámara o buscar por nombre/código y pulsar **Registrar**. Si la cámara no está disponible se puede usar la búsqueda. Los estudiantes no tienen acceso al padrón ni a acciones de asistencia.
 
 Comprobar el escáner con cámara y permiso de Android en un dispositivo físico antes de distribuir la versión. Las pruebas automatizadas cubren navegación por rol, búsqueda/registro y restricciones del servidor; no sustituyen esa comprobación de cámara.
+
+## Horarios editables · versión 0.3.0
+
+`POST /admin/service-days` acepta también horarios individuales: `{"date":"2026-10-23","turns":[{"group_id":1,"start":"07:00","minutes":20},{"group_id":2,"start":"07:30","minutes":40}]}`. Se conserva el formato anterior con `start`, `minutes` y `group_ids` para clientes antiguos.
+
+`PATCH /admin/service-days/{id}` requiere `date`, `version` actual y la lista completa `turns`, con `id`, `group_id`, `start` y `minutes`. Usar `id:0` para un turno nuevo; omitir un turno pendiente para eliminarlo. Solo administradores. No cambia la fecha de una jornada existente: para otra fecha se crea otra jornada.
+
+Se validan cursos y docentes activos, duración de 1–120 minutos, grupos sin repetir, horas ordenadas sin cruces y finalización dentro del mismo día. Una jornada pasada o terminada no se puede editar. Antes del inicio se puede reorganizar toda la lista; después se conservan íntegros el turno activo y los atendidos, omitidos o cancelados. Los pendientes deben quedar después del horario del turno activo. La lista completa incluye también los turnos protegidos, sin cambios.
+
+La edición bloquea la jornada en MySQL, comprueba su versión, guarda el nuevo estado y registra `day.update` en auditoría dentro de la misma transacción. Un conflicto devuelve 409: el editor conserva los cambios locales y muestra que se debe volver a abrir para obtener el estado vigente.
+
+En la app: **Encargado → Programar / editar jornada**, seleccionar la fecha y ajustar los campos de cada grupo. **Editar horarios de hoy** abre directamente la jornada actual. Los controles para añadir, quitar y mover turnos solo se ofrecen para pendientes. El selector de fecha está en español.

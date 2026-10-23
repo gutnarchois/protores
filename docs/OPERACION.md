@@ -25,7 +25,7 @@ El acceso administrativo inicial está en `.private/ACCESO_ADMIN.md` en el equip
 
 El tiempo vencido no activa otro grupo automáticamente. Al perder red, el estado se señala como desactualizado y los botones de avance se deshabilitan tras detectar la desconexión. La API siempre decide si un cambio se confirmó.
 
-La primera versión aún no permite editar una programación creada: revisarla antes de guardar. No registrar estudiantes por nombre si la institución puede asignar identificadores de cuenta que reduzcan datos personales.
+Desde 0.3.0 se puede editar una programación desde Encargado → Programar / editar jornada. Después del inicio solo se modifican turnos pendientes; el activo y el historial se conservan. No registrar estudiantes por nombre si la institución puede asignar identificadores de cuenta que reduzcan datos personales.
 
 ## Supervisión y respaldo
 
@@ -93,3 +93,9 @@ API 0.1.1 desplegada y APK publicado; instalar la actualización con la misma fi
 El backend 0.2.0 está desplegado con respaldo previo, comprobación de salud y consultas autenticadas de estado y padrón. Crea las tablas `students` y `attendance` al arrancar. No se cargaron estudiantes ficticios en producción.
 
 La navegación ahora es **Inicio**, **Turno actual**, **Registro** y **Encargado**. El administrador encuentra usuarios, grupos y programación en Encargado. Para asistencia, crear primero los estudiantes de cada grupo; el QR contiene su código único. Docentes solo consultan y registran estudiantes de sus grupos; el curso debe estar en atención y la jornada en marcha. No se permite un segundo ingreso el mismo día.
+
+## Horarios e identidad visual · versión 0.3.0
+
+El backend 0.3.0 está desplegado con respaldo y comprobación de la nueva ruta administrativa por HTTPS sin modificar jornadas reales. El administrador crea o edita horarios en **Encargado → Programar / editar jornada**: elige fecha, curso, hora y duración individual. La jornada de hoy también se abre desde **Editar horarios de hoy**. Se validan cruces y versiones concurrentes; el turno activo y el historial no se alteran.
+
+La app y la página de descarga incorporan el logo propio y la ilustración del restaurante. Los recursos y prompts están documentados en `docs/RECURSOS_VISUALES.md`. El APK 0.3.0 tiene código 4 y conserva la firma anterior.

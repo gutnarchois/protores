@@ -44,4 +44,4 @@ TEST_MYSQL_DSN='usuario:clave@tcp(127.0.0.1:3306)/protores_test' go test -race .
 
 La firma Android requiere `mobile/android/key.properties`, que está excluido de Git. Consultar la guía de operación. El repositorio es `gutnarchois/protores`; el producto y el paquete Android se llaman **Protores** y `co.edu.iecc.protores`.
 
-Versión 0.2.0 para Android 7.0 o superior. Incorpora las cuatro pantallas del mockup, estudiantes por curso, registro de asistencia por QR o búsqueda y resumen de asistencia. API y página de descarga actualizadas. Versión para piloto: falta la validación presencial de la institución y del escáner en dispositivos físicos. No incluye inventario de alimentos.
+Versión 0.3.0 para Android 7.0 o superior. Incorpora las cuatro pantallas del mockup, logo propio e ilustración del restaurante, edición administrativa de horarios con hora y duración por grupo, estudiantes por curso, registro de asistencia por QR o búsqueda y resumen de asistencia. API y página de descarga actualizadas. Versión para piloto: falta la validación presencial de la institución y del escáner en dispositivos físicos. No incluye inventario de alimentos.

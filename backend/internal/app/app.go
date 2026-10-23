@@ -413,6 +413,12 @@ func (a *App) route(r *http.Request, u User, token string) (any, error) {
 		return map[string]any{"id": id}, a.audit(ctx, u.ID, "group.create", id, p)
 	case path == "/admin/service-days" && r.Method == "POST":
 		return a.createDay(r, u)
+	case strings.HasPrefix(path, "/admin/service-days/") && r.Method == "PATCH":
+		id, e := strconv.ParseInt(strings.TrimPrefix(path, "/admin/service-days/"), 10, 64)
+		if e != nil {
+			return nil, fail(400, "Jornada inválida")
+		}
+		return a.updateDay(r, u, id)
 	case strings.HasPrefix(path, "/admin/service-days/") && r.Method == "POST":
 		parts := strings.Split(strings.TrimPrefix(path, "/admin/service-days/"), "/")
 		if len(parts) != 2 {
@@ -482,39 +488,48 @@ func (a *App) audit(ctx context.Context, uid int64, action string, id int64, det
 }
 func (a *App) createDay(r *http.Request, u User) (any, error) {
 	var p struct {
-		Date     string  `json:"date"`
-		Start    string  `json:"start"`
-		GroupIDs []int64 `json:"group_ids"`
-		Minutes  int     `json:"minutes"`
+		Date     string         `json:"date"`
+		Start    string         `json:"start"`
+		GroupIDs []int64        `json:"group_ids"`
+		Minutes  int            `json:"minutes"`
+		Turns    []scheduleTurn `json:"turns"`
 	}
 	if e := decode(r, &p); e != nil {
 		return nil, e
 	}
-	if !validDate(p.Date) || p.Minutes < 1 || p.Minutes > 120 || len(p.GroupIDs) == 0 || len(p.GroupIDs) > 100 {
-		return nil, fail(400, "Fecha, grupos o duración inválidos")
-	}
-	loc, _ := time.LoadLocation("America/Bogota")
-	start, e := time.ParseInLocation("2006-01-02 15:04", p.Date+" "+p.Start, loc)
-	if e != nil {
-		return nil, fail(400, "Hora inválida; usa HH:MM")
-	}
-	d := Day{Date: p.Date, Status: "scheduled", Version: 1, Turns: []Turn{}}
-	seen := map[int64]bool{}
-	for i, id := range p.GroupIDs {
-		if seen[id] {
-			return nil, fail(400, "Grupo repetido")
+	inputs := p.Turns
+	if inputs == nil {
+		if !validDate(p.Date) || p.Minutes < 1 || p.Minutes > 120 || len(p.GroupIDs) == 0 || len(p.GroupIDs) > 100 {
+			return nil, fail(400, "Fecha, grupos o duración inválidos")
 		}
-		seen[id] = true
+		loc, _ := time.LoadLocation("America/Bogota")
+		start, e := time.ParseInLocation("2006-01-02 15:04", p.Date+" "+p.Start, loc)
+		if e != nil {
+			return nil, fail(400, "Hora inválida; usa HH:MM")
+		}
+		for i, gid := range p.GroupIDs {
+			at := start.Add(time.Duration(i*p.Minutes) * time.Minute)
+			if at.In(loc).Format("2006-01-02") != p.Date {
+				return nil, fail(400, "La programación debe caber en el mismo día")
+			}
+			inputs = append(inputs, scheduleTurn{GroupID: gid, Start: at.Format("15:04"), Minutes: p.Minutes})
+		}
+	}
+	turns, e := validateSchedule(p.Date, inputs)
+	if e != nil {
+		return nil, e
+	}
+	d := Day{Date: p.Date, Status: "scheduled", Version: 1, Turns: turns}
+	for i := range d.Turns {
+		t := &d.Turns[i]
 		var g Group
-		e = a.db.QueryRowContext(r.Context(), "SELECT g.id,g.name,g.teacher_id FROM school_groups g JOIN users u ON u.id=g.teacher_id WHERE g.id=? AND g.active=1 AND u.active=1", id).Scan(&g.ID, &g.Name, &g.TeacherID)
+		e = a.db.QueryRowContext(r.Context(), "SELECT g.id,g.name,g.teacher_id FROM school_groups g JOIN users u ON u.id=g.teacher_id WHERE g.id=? AND g.active=1 AND u.active=1 AND u.role='teacher'", t.GroupID).Scan(&g.ID, &g.Name, &g.TeacherID)
 		if e != nil {
 			return nil, fail(400, "Grupo o docente no disponible")
 		}
-		scheduled := start.Add(time.Duration(i*p.Minutes) * time.Minute)
-		if scheduled.In(loc).Format("2006-01-02") != p.Date {
-			return nil, fail(400, "La programación debe caber en el mismo día")
-		}
-		d.Turns = append(d.Turns, Turn{ID: int64(i + 1), GroupID: g.ID, GroupName: g.Name, TeacherID: g.TeacherID, Scheduled: scheduled.Format(time.RFC3339), Duration: p.Minutes * 60, Status: "pending"})
+		t.ID = int64(i + 1)
+		t.GroupName = g.Name
+		t.TeacherID = g.TeacherID
 	}
 	raw, _ := json.Marshal(d)
 	tx, e := a.db.BeginTx(r.Context(), nil)

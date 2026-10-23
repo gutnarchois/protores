@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'schedule_editor.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -20,6 +22,13 @@ class ProtoresApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Protores',
+    locale: const Locale('es', 'CO'),
+    supportedLocales: const [Locale('es', 'CO')],
+    localizationsDelegates: const [
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
     debugShowCheckedModeBanner: false,
     theme: ThemeData(
       colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff139c61)),
@@ -425,18 +434,26 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
           backgroundColor: accent,
           foregroundColor: Colors.white,
           toolbarHeight: 80,
-          leading: Icon(
-            page == 0
-                ? Icons.restaurant_menu
-                : page == 1
-                ? Icons.schedule
-                : page == 2
-                ? Icons.qr_code_scanner
-                : Icons.settings,
-          ),
+          leading: page == 0
+              ? Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Image.asset(
+                    'assets/images/protores-logo.png',
+                    semanticLabel: 'Logo de Protores',
+                  ),
+                )
+              : Icon(
+                  page == 0
+                      ? Icons.restaurant_menu
+                      : page == 1
+                      ? Icons.schedule
+                      : page == 2
+                      ? Icons.qr_code_scanner
+                      : Icons.settings,
+                ),
           title: Text(
             [
-              'Restaurante Escolar',
+              'Protores',
               'Turno actual',
               'Registro de ingreso',
               'Panel del encargado',
@@ -551,10 +568,10 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.restaurant_menu,
-                  size: 72,
-                  color: Color(0xff15995d),
+                Image.asset(
+                  'assets/images/protores-logo.png',
+                  height: 108,
+                  semanticLabel: 'Logo de Protores',
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -652,6 +669,18 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
   );
 
   List<Widget> welcomeScreen() => [
+    ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Image.asset(
+        'assets/images/restaurante-escolar.png',
+        height: 140,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        semanticLabel:
+            'Estudiantes recibiendo su almuerzo en el restaurante escolar',
+      ),
+    ),
+    const SizedBox(height: 8),
     panel('¡Bienvenido, ${user!['name']}!', Icons.waving_hand_outlined, const [
       Text(
         'Consulta los horarios de turnos y las normas del restaurante escolar.',
@@ -1193,8 +1222,15 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
     FilledButton.icon(
       onPressed: busy ? null : createSchedule,
       icon: const Icon(Icons.calendar_month),
-      label: const Text('Programar jornada'),
+      label: const Text('Programar / editar jornada'),
     ),
+    if (day?['id'] != null && day?['id'] != 0 && day?['status'] != 'finished')
+      OutlinedButton.icon(
+        onPressed: busy ? null : () => editSchedule(today),
+        icon: const Icon(Icons.edit_calendar),
+        label: const Text('Editar horarios de hoy'),
+      ),
+
     OutlinedButton.icon(
       onPressed: busy ? null : createUser,
       icon: const Icon(Icons.person_add),
@@ -1405,68 +1441,69 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
       showMessage('Primero crea los grupos y sus docentes.');
       return;
     }
-    final selected = <int>[];
-    final ids = await showDialog<List<int>>(
+    final now = DateTime.parse(today);
+    final selected = await showDatePicker(
       context: context,
-      builder: (c) => StatefulBuilder(
-        builder: (c, setLocal) => AlertDialog(
-          title: const Text('Grupos en orden de atención'),
-          content: SizedBox(
-            width: 360,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Selecciona en el orden en que serán llamados.'),
-                  for (final g in groups.where((g) => g['active'] == true))
-                    CheckboxListTile(
-                      title: Text(g['name']),
-                      subtitle: selected.contains(g['id'])
-                          ? Text('Turno ${selected.indexOf(g['id']) + 1}')
-                          : null,
-                      value: selected.contains(g['id']),
-                      onChanged: (v) => setLocal(() {
-                        v == true
-                            ? selected.add(g['id'])
-                            : selected.remove(g['id']);
-                      }),
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(c),
-              child: const Text('Volver'),
-            ),
-            FilledButton(
-              onPressed: selected.isEmpty
-                  ? null
-                  : () => Navigator.pop(c, List<int>.from(selected)),
-              child: const Text('Continuar'),
-            ),
-          ],
-        ),
-      ),
+      initialDate: now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 730)),
+      helpText: 'Selecciona la jornada a crear o editar',
     );
-    if (ids == null || !mounted) {
-      return;
+    if (selected == null || !mounted) return;
+    await editSchedule(DateFormat('yyyy-MM-dd').format(selected));
+  }
+
+  Future<void> editSchedule(String date) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      final value = await api.call('/schedule?date=$date');
+      final scheduled = Map<String, dynamic>.from(value['day']);
+      if (scheduled['status'] == 'finished') {
+        showMessage('La jornada ya terminó; se conserva su historial.');
+        return;
+      }
+      if (!mounted) return;
+      final saved = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ScheduleEditor(
+            date: date,
+            groups: groups,
+            turns: scheduled['turns'] as List<dynamic>? ?? [],
+            onSave: (turns) async {
+              final exists = scheduled['id'] != null && scheduled['id'] != 0;
+              try {
+                await api.call(
+                  exists
+                      ? '/admin/service-days/${scheduled['id']}'
+                      : '/admin/service-days',
+                  method: exists ? 'PATCH' : 'POST',
+                  data: {
+                    'date': date,
+                    if (exists) 'version': scheduled['version'],
+                    'turns': turns,
+                  },
+                );
+              } catch (e) {
+                throw ApiException(
+                  readError(e),
+                  e is ApiException ? e.code : 0,
+                );
+              }
+            },
+          ),
+        ),
+      );
+      if (saved == true) {
+        await refresh();
+        showMessage('Horarios guardados');
+      }
+    } catch (e) {
+      showMessage(readError(e));
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
-    final data = await fieldsDialog('Horario · Colombia', {
-      'date': 'Fecha (AAAA-MM-DD), hoy: $today',
-      'start': 'Inicio (HH:MM, 24 horas)',
-      'minutes': 'Minutos por grupo (1–120)',
-    });
-    if (data == null) {
-      return;
-    }
-    await save('/admin/service-days', {
-      'date': data['date'],
-      'start': data['start'],
-      'minutes': int.tryParse(data['minutes'] ?? '') ?? 0,
-      'group_ids': ids,
-    });
   }
 
   Future<void> turnReason(dynamic turn, String action) async {
